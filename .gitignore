@@ -15,6 +15,7 @@ build/
 logs/
 *.log
 !output.log
+!output-tema2.log
 npm-debug.log*
 pnpm-debug.log*
 

@@ -9,7 +9,11 @@
     "checklist2": "tsx src/checklist2.ts",
     "checklist4": "tsx src/checklist4.ts",
     "checklist5": "tsx src/checklist5.ts",
-    "output": "tsx src/genereaza-output.ts"
+    "output": "tsx src/genereaza-output.ts",
+    "t2:checklist12": "tsx src/tema2/checklist12.ts",
+    "t2:checklist3": "tsx src/tema2/checklist3.ts",
+    "t2:checklist4": "tsx src/tema2/checklist4.ts",
+    "t2:output": "tsx src/tema2/genereaza-output.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

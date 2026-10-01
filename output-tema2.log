@@ -1,0 +1,86 @@
+Tema 2 · Lab 9 middleware custom · consola capturata de `pnpm t2:output`
+
+==================== CHECKLIST 1 ====================
+Ce apare EFECTIV in ToolMessage-ul lui cautaClient?
+
+$ pnpm t2:checklist12
+[human] cauta clientul ionel.popescu si trimite-i confirmarea
+[ai] cauta clientul ionel.popescu si trimite-i confirmarea
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[ai] cauta clientul ionel.popescu si trimite-i confirmarea-cauta clientul ionel.popescu si trimite-i confirmarea-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[tool] Email de confirmare trimis catre [ID_EMAIL_1].
+[ai] cauta clientul ionel.popescu si trimite-i confirmarea-cauta clientul ionel.popescu si trimite-i confirmarea-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca-cauta clientul ionel.popescu si trimite-i confirmarea-cauta clientul ionel.popescu si trimite-i confirmarea-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca-Email de confirmare trimis catre [ID_EMAIL_1].
+emailuriTrimise (din afara conversatiei): [{"email":"ionel.popescu@example.com","mesaj":"Rezervarea este confirmata."}]
+
+Raspuns: Id-uri opace: emailul apare ca [ID_EMAIL_1], iar cardul complet ca [ID_CARD_1]. anonimizarePii rescrie ToolMessage-ul in wrapToolCall, dupa handler si inainte sa intre in state, deci nici istoricul, nici modelul nu vad valorile reale. Modelul fals isi copiaza intrarea in mesajul AI (node_modules/langchain/dist/agents/tests/utils.js:52-62), iar liniile [ai] de dupa cautare contin tot [ID_EMAIL_1] si [ID_CARD_1] (prima linie [ai], dinaintea tool-ului, nu are inca niciun id).
+
+Linii citate din consola:
+  [tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+  [ai] cauta clientul ionel.popescu si trimite-i confirmarea-cauta clientul ionel.popescu si trimite-i confirmarea-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+
+==================== CHECKLIST 2 ====================
+Verificati DIN AFARA conversatiei (array-ul populat de trimiteEmailConfirmare) ce email a primit EFECTIV tool-ul.
+
+(aceeasi consola ca la checklist 1: $ pnpm t2:checklist12)
+
+Raspuns: Adresa reala. Modelul a cerut trimiteEmailConfirmare cu email [ID_EMAIL_1], scris de mana in tura 2; wrapToolCall a inlocuit id-ul cu valoarea din harta firului inainte de handler, intr-un request nou ({ ...request, toolCall: { ...request.toolCall, args } }), fara sa modifice tool_calls din mesajul AI. Array-ul emailuriTrimise e populat chiar de tool, deci arata ce a primit efectiv. Raspunsul tool-ului contine adresa reala si e mascat la loc, deci ToolMessage-ul din istoric arata tot [ID_EMAIL_1].
+
+Linii citate din consola:
+  emailuriTrimise (din afara conversatiei): [{"email":"ionel.popescu@example.com","mesaj":"Rezervarea este confirmata."}]
+  [tool] Email de confirmare trimis catre [ID_EMAIL_1].
+
+==================== CHECKLIST 3 ====================
+Daca cereti clientul 'ionel.popescu' de DOUA ori in aceeasi conversatie, primeste acelasi ID opac sau doua ID-uri diferite? Ce ati scrie in cod ca sa garantati raspunsul corect?
+
+$ pnpm t2:checklist3
+=== thread_id "fir-A" · ionel.popescu cautat de doua ori ===
+[human] cauta clientul ionel.popescu, apoi verifica-l inca o data
+[ai] cauta clientul ionel.popescu, apoi verifica-l inca o data
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[ai] cauta clientul ionel.popescu, apoi verifica-l inca o data-cauta clientul ionel.popescu, apoi verifica-l inca o data-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[ai] cauta clientul ionel.popescu, apoi verifica-l inca o data-cauta clientul ionel.popescu, apoi verifica-l inca o data-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca-cauta clientul ionel.popescu, apoi verifica-l inca o data-cauta clientul ionel.popescu, apoi verifica-l inca o data-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca-Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+id-uri in harta fir-A: [ID_EMAIL_1], [ID_CARD_1]
+
+=== thread_id "fir-B" · maria.ionescu cautata o data ===
+[human] cauta clientul maria.ionescu
+[ai] cauta clientul maria.ionescu
+[tool] Client Maria Ionescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Iasi
+[ai] cauta clientul maria.ionescu-cauta clientul maria.ionescu-Client Maria Ionescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Iasi
+id-uri in harta fir-B: [ID_EMAIL_1], [ID_CARD_1]
+
+Raspuns: Acelasi id. In fir-A, ambele cautari ale lui ionel.popescu dau aceeasi linie [tool], cu [ID_EMAIL_1] si [ID_CARD_1], iar harta firului are doar aceste doua id-uri. Garantia din cod: pe fiecare fir tinem si harta inversa valoare -> id; pentru fiecare valoare gasita in rezultat cautam intai in ea si alocam un id nou (contorul tipului + 1) doar daca valoarea nu exista, iar alocarea scrie ambele directii in acelasi bloc sincron (idPentru, src/tema2/anonimizare-pii.ts:42-50). Intre handler si return nu exista niciun await (src/tema2/anonimizare-pii.ts:101), ceea ce conteaza la apeluri paralele: fiecare tool call e un Send separat (node_modules/langchain/dist/agents/ReactAgent.js:394-397, node_modules/langchain/dist/agents/nodes/ToolNode.js:315-317), iar wrapper-ele se intrepatrund doar la await, deci doua apeluri nu pot aloca doua id-uri pentru aceeasi valoare. Totul e cheiat pe thread_id: in fir-B, maria.ionescu primeste tot [ID_EMAIL_1] / [ID_CARD_1], in harta ei. Din investigatie, nu din aceasta consola: la apeluri paralele in acelasi mesaj AI, numerotarea urmeaza ordinea in care se termina tool-urile, dar aceeasi valoare tot primeste un singur id.
+
+Linii citate din consola:
+  [tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+  id-uri in harta fir-A: [ID_EMAIL_1], [ID_CARD_1]
+  [tool] Client Maria Ionescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Iasi
+  id-uri in harta fir-B: [ID_EMAIL_1], [ID_CARD_1]
+
+==================== CHECKLIST 4 ====================
+Ce se intampla cu harta din memorie daca middleware-ul ruleaza alaturi de humanInTheLoopMiddleware, iar procesul moare intre oprirea la aprobare si aprobare? Legati raspunsul de checkpointer si thread_id.
+
+$ pnpm t2:checklist4
+=== A: checkpointer pastrat, harta pierduta · thread_id "fir-hitl" ===
+dupa invoke: intrerupere: trimiteEmailConfirmare {"email":"[ID_EMAIL_1]","mesaj":"Rezervarea este confirmata."} | emailuri trimise: 0
+id-uri in harta fir-hitl: 2
+--- restart simulat: harta din memorie golita; acelasi MemorySaver, agent nou ---
+id-uri in harta fir-hitl: 0
+decizie trimisa: {"decisions":[{"type":"approve"}]}
+dupa resume: 6 mesaje | ultimul [tool]: Email de confirmare trimis catre [ID_EMAIL_1].
+emailuriTrimise (din afara conversatiei): [{"email":"[ID_EMAIL_1]","mesaj":"Rezervarea este confirmata."}]
+
+=== B: procesul moare cu MemorySaver · thread_id "fir-hitl-b" ===
+dupa invoke: intrerupere: da | emailuri trimise in B: 0
+--- procesul moare: MemorySaver-ul si harta se pierd; aprobarea vine pe un MemorySaver nou ---
+decizie trimisa: {"decisions":[{"type":"approve"}]}
+dupa resume: 0 mesaje | intrerupere: nu | emailuri trimise in B: 0
+
+Raspuns: humanInTheLoopMiddleware are doar afterModel (node_modules/langchain/dist/agents/middleware/hitl.js:411-416), deci se opreste dupa model, inainte sa ruleze vreun tool (emailuri trimise: 0 la intrerupere). Checkpointer-ul salveaza starea grafului pe thread_id, inclusiv mesajul AI cu id-ul OPAC in tool_calls: cererea de aprobare arata [ID_EMAIL_1], deci nici omul care aproba nu vede adresa. Harta NU e in checkpoint: e o variabila de modul si moare cu procesul. (1) Cu MemorySaver, procesul mort pierde si checkpoint-ul, si harta. SIMULAT in partea B cu un MemorySaver nou in acelasi proces: aprobarea trimisa cu acelasi thread_id nu arunca si nu face nimic: 0 mesaje, nicio intrerupere, tool-ul nu ruleaza (emailuri trimise in B: 0). Comportamentul e din consola; ramura exacta din pregel e urmarita doar partial: node_modules/@langchain/langgraph/dist/pregel/loop.js:192-204 nu trateaza rularea ca resume cand checkpoint-ul nu are versiuni de canal, iar :668 arunca doar cand nu exista deloc checkpointer. (2) Cu un checkpointer durabil (Postgres, Sqlite), SIMULAT aici cu acelasi MemorySaver si un agent nou, nu rulat pe Postgres: intreruperea supravietuieste si resume-ul ruleaza nodul de tool-uri cu acelasi thread_id (node_modules/langchain/dist/agents/nodes/ToolNode.js:185-193), dar harta lui fir-hitl e goala (2 id-uri inainte, 0 dupa). Dezanonimizarea nu gaseste nimic, iar tool-ul primeste textul literal [ID_EMAIL_1], fara nicio eroare (partea A). Mai rau: si contorul firului porneste de la zero, deci urmatoarea valoare noua din acelasi fir ar primi din nou [ID_EMAIL_1], iar un "trimite la [ID_EMAIL_1]" cerut dupa acea alocare ar ajunge la ALT client. Asta rezulta din cod (o harta goala aloca de la 1, ca fir-B la checklist 3) si din investigatie, nu din consola acestui script. Remediu: harta trebuie persistata impreuna cu firul, langa checkpoint (un store cheiat pe thread_id, prin runtime.store, sau in starea grafului); id-urile sa nu fie refolosibile (aleatoare sau hash), iar un id necunoscut sa opreasca actiunea (fail closed), de exemplu prin validarea formatului emailului in tool.
+
+Linii citate din consola:
+  dupa invoke: intrerupere: trimiteEmailConfirmare {"email":"[ID_EMAIL_1]","mesaj":"Rezervarea este confirmata."} | emailuri trimise: 0
+  id-uri in harta fir-hitl: 2
+  id-uri in harta fir-hitl: 0
+  emailuriTrimise (din afara conversatiei): [{"email":"[ID_EMAIL_1]","mesaj":"Rezervarea este confirmata."}]
+  dupa resume: 0 mesaje | intrerupere: nu | emailuri trimise in B: 0
