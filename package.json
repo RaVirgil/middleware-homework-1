@@ -13,7 +13,13 @@
     "t2:checklist12": "tsx src/tema2/checklist12.ts",
     "t2:checklist3": "tsx src/tema2/checklist3.ts",
     "t2:checklist4": "tsx src/tema2/checklist4.ts",
-    "t2:output": "tsx src/tema2/genereaza-output.ts"
+    "t2:output": "tsx src/tema2/genereaza-output.ts",
+    "t3:rutare": "tsx src/tema3/rutare.ts",
+    "t3:tura2": "tsx src/tema3/tura2.ts",
+    "t3:euristica": "tsx src/tema3/euristica.ts",
+    "t3:configurare": "tsx src/tema3/configurare.ts",
+    "t3:cost": "tsx src/tema3/cost.ts",
+    "t3:output": "tsx src/tema3/genereaza-output.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

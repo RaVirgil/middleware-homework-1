@@ -16,6 +16,7 @@ logs/
 *.log
 !output.log
 !output-tema2.log
+!output-tema3.log
 npm-debug.log*
 pnpm-debug.log*
 
